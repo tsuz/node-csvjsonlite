@@ -44,12 +44,12 @@ Or you can be specific
 
 # Get Started
 
-```
+```js
 npm install node-csvjsonlite
 ```
 
 
-```
+```js
 var csv = require('node-csvjsonlite');
 ```
 
