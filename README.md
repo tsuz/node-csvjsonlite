@@ -8,9 +8,10 @@
     var csv  = require('node-csvjsonlite');
 
     var filename = './path/to/your.csv';
-    // or this can be a URL like
+    // OR this can be a URL like
     // filename = 'http://sample.com/data.csv';
-
+    // OR filename can be a string of CSV data
+    //
     // Suppose your.csv is following:
     //
     // Date,Open,High,Low
@@ -20,6 +21,8 @@
 
     csv
         .convert(filename)
+            // Detects whether filname is
+            // a local file, URL, or string of data
         .then(function(successData){
             console.log('CSV in JSON', successData);
             // resolves to
@@ -30,6 +33,14 @@
 
 ```
 
+Or you can be specific
+
+```js
+    var promiseFile = csv.convertFile(filename);
+    var promiseURL  = csv.convertURL(fileURL);
+    var promiseStr  = csv.convertString(stringData);
+
+```
 
 # Get Started
 
