@@ -109,15 +109,17 @@ var CSVtoJSON   = {};
         return new Promise(function(resolve, reject){
             /** HTTP(S) or local data */
             var fn;
-                if(_isHTTPFile(csvFileName)) {
-                    /** HTTP/HTTPS URL */
-                    fn = 'convertURL';
+                 if(/.csv\s*$/.test(csvFileName)){
+                     if(_isHTTPFile(csvFileName)) {
+                         /** HTTP/HTTPS URL */
+                         fn = 'convertURL';
+                     }else {
+                         /** File Dir **/
+                         fn = 'convertFile';
+                     }
                 } else if(/,/.test(csvFileName)){
                     /** String **/
                     fn = 'convertString';
-                } else if(/.csv\s*$/.test(csvFileName)){
-                    /** File Dir **/
-                    fn = 'convertFile';
                 } else{
                     reject('Invalid Conversion Type');
                 }
