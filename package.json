@@ -1,0 +1,35 @@
+{
+  "name": "node-csvjsonlite",
+  "description": "Lightweight CSV to JSON for Node.JS",
+  "version": "1.0.0",
+  "main": "src/csvtojson.js",
+  "author": "Takuto Suzuki",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tak215/node-csvjsonlite/issues"
+  },
+  "homepage": "https://github.com/tak215/node-csvjsonlite",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "bluebird": "^2.9.21",
+    "chai": "^2.2.0",
+    "mocha": "^2.2.1"
+  },
+  "scripts": {
+    "test": "mocha \"test/*.spec.js\""
+  },
+  "devDependencies": {
+    "mocha": "^2.2.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tak215/node-csvjsonlite.git"
+  },
+  "keywords": [
+    "CSV",
+    "JSON",
+    "CSV2JSON"
+  ]
+}
