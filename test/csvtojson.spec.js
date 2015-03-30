@@ -17,44 +17,55 @@ describe('CSV to JSON', function(){
     var columnOnlyFile  = './test/data/column-only-data.csv';
     var validCommaFile  = './test/data/valid-data-comma.csv';
 
-    describe('Handle CSV Data', function(){
+    describe('Detect and Handle CSV Data as File', function(){
         it('should convert into array with defined parameters',
-            _handleCSVData__convertIntoArrayWithDefinedParameters(validDataFile, definedKeys));
+            _handleCSVAsFile__convertIntoArrayWithDefinedParameters(validDataFile, definedKeys));
 
         it('should convert into array with defined parameters with random multiple returns',
-            _handleCSVData__convertIntoArrayWithMultipleReturns(mtplReturnsFile, definedKeys));
+            _handleCSVAsFile__convertIntoArrayWithMultipleReturns(mtplReturnsFile, definedKeys));
 
         it('should handle empty CSV files with an empty array',
-            _handleCSVData__handleEmptyCSVFile(emptyDataFile));
+            _handleCSVAsFile__handleEmptyCSVFile(emptyDataFile));
 
         it('should handle CSV files with an empty data but valid columns',
-            _handleCSVData__handleEmptyCSVFileWithValidColumns(columnOnlyFile));
+            _handleCSVAsFile__handleEmptyCSVFileWithValidColumns(columnOnlyFile));
 
         it('should reject a promise if the file name is not defined',
-            _handleCSVData__rejectPromiseIfFileNotFound);
+            _handleCSVAsFile__rejectPromiseIfFileNotFound);
 
         it('should handle exception for commas within cell',
-            _handleCSVData__handleExceptionForCommas(validCommaFile, definedKeys));
+            _handleCSVAsFile__handleExceptionForCommas(validCommaFile, definedKeys));
     })
 
-    describe('HTTP CSV Data', function(){
+    describe('Detect and Handle HTTP CSV Data', function(){
         var validUrl    = 'http://real-chart.finance.yahoo.com/table.csv?s=AAPL&a=11&b=12&c=2014&d=02&e=29&f=2015&g=d&ignore=.csv';
         var validUrl2   = 'http://www-01.ibm.com/support/knowledgecenter/api/content/nl/en-us/SVU13_7.2.1/com.ibm.ismsaas.doc/reference/UsersImportCompleteSample.csv';
         var invalidUrl  = 'http://real-charhoo.com/table.csv?s=AAPL&a=11&b=12&c=2014&d=02&e=29&f=2015&g=d&ignore=.csv';
         var validHTTPS  = 'https://docs.shopify.com/manual/your-store/products/product_template.csv';
 
         it('should retrieve data from valid HTTP URL',
-            _HTTP__returnValidOnlineCSVURL(validUrl));
+            _handleCSVAsURL__returnValidOnlineCSVURL(validUrl));
 
         it('should retrieve data from another valid HTTP URL',
-            _HTTP__returnValidOnlineCSVURL(validUrl2));
+            _handleCSVAsURL__returnValidOnlineCSVURL(validUrl2));
 
         it('should retrieve data from valid HTTPS URL',
-            _HTTP__returnValidOnlineCSVURL(validHTTPS));
+            _handleCSVAsURL__returnValidOnlineCSVURL(validHTTPS));
 
         it('should not retrieve data from invalid CSV URL',
-            _HTTP__returnInvalidOnlineCSVURL(invalidUrl));
-        
+            _handleCSVAsURL__returnInvalidOnlineCSVURL(invalidUrl));
+    })
+
+    describe('Detect and Handle String CSV Data ', function(){
+        var handleStringCSV = 'Date,Value\n3,4\n5,6';
+        it('should handle string data',
+            _handleCSVAsString__returnValidStringToJSON(handleStringCSV));
+    })
+
+    describe('Detect Error', function(){
+        var badString = './test/data/data.doc';
+        it('should throw an error if the convert cannot detect type of conversion',
+            _handleCSVError__badType(badString));
     })
 })
 
@@ -66,7 +77,7 @@ describe('CSV to JSON', function(){
  * @returns {Function}
  * @private
  */
-function _handleCSVData__convertIntoArrayWithDefinedParameters(validDataFile, definedKeys){
+function _handleCSVAsFile__convertIntoArrayWithDefinedParameters(validDataFile, definedKeys){
     return function(done) {
         CSVtoJSON
             .convert(validDataFile)
@@ -88,7 +99,7 @@ function _handleCSVData__convertIntoArrayWithDefinedParameters(validDataFile, de
  * @param done
  * @private
  */
-function _handleCSVData__convertIntoArrayWithMultipleReturns(mtplReturnsFile, definedKeys) {
+function _handleCSVAsFile__convertIntoArrayWithMultipleReturns(mtplReturnsFile, definedKeys) {
     return function (done) {
         CSVtoJSON
             .convert(mtplReturnsFile)
@@ -111,7 +122,7 @@ function _handleCSVData__convertIntoArrayWithMultipleReturns(mtplReturnsFile, de
  * @returns {Function}
  * @private
  */
-function _handleCSVData__handleEmptyCSVFile(emptyDataFile){
+function _handleCSVAsFile__handleEmptyCSVFile(emptyDataFile){
     return function(done){
         CSVtoJSON
             .convert(emptyDataFile)
@@ -128,7 +139,7 @@ function _handleCSVData__handleEmptyCSVFile(emptyDataFile){
  * @returns {Function}
  * @private
  */
-function _handleCSVData__handleEmptyCSVFileWithValidColumns(columnOnlyFile){
+function _handleCSVAsFile__handleEmptyCSVFileWithValidColumns(columnOnlyFile){
     return function(done){
         CSVtoJSON
             .convert(columnOnlyFile)
@@ -140,11 +151,11 @@ function _handleCSVData__handleEmptyCSVFileWithValidColumns(columnOnlyFile){
 }
 
 /**
- * _handleCSVData__rejectPromiseIfFileNotFound
+ * _handleCSVAsFile__rejectPromiseIfFileNotFound
  * @param done
  * @private
  */
-function _handleCSVData__rejectPromiseIfFileNotFound(done){
+function _handleCSVAsFile__rejectPromiseIfFileNotFound(done){
     CSVtoJSON
         .convert('./test/data/unknown-data.csv')
         .then(function(){
@@ -156,19 +167,19 @@ function _handleCSVData__rejectPromiseIfFileNotFound(done){
 }
 
 /**
- * _handleCSVData__handleExceptionForCommas
+ * _handleCSVAsFile__handleExceptionForCommas
  * @param validCommaFile
  * @param definedKeys
  * @returns {Function}
  * @private
  */
-function _handleCSVData__handleExceptionForCommas(validCommaFile, definedKeys){
+function _handleCSVAsFile__handleExceptionForCommas(validCommaFile, definedKeys){
     return function(done){
         CSVtoJSON
             .convert(validCommaFile)
             .then(function(data){
                 expect(data.length).to.equal(3);
-                expect(data[0]['Volume']).to.equal('"1045,200"');
+                expect(data[0]['Volume']).to.equal('1045,200');
                 expect(data[1]['Close']).to.equal('"2.59"');
                 for(var key in definedKeys){
                     data.forEach(function(e){
@@ -182,12 +193,12 @@ function _handleCSVData__handleExceptionForCommas(validCommaFile, definedKeys){
 
 
 /**
- * _HTTP__returnValidOnlineCSVURL
+ * _handleCSVAsURL__returnValidOnlineCSVURL
  * @param url
  * @returns {Function}
  * @private
  */
-function _HTTP__returnValidOnlineCSVURL(url){
+function _handleCSVAsURL__returnValidOnlineCSVURL(url){
     return function(done){
         CSVtoJSON
             .convert(url)
@@ -200,12 +211,12 @@ function _HTTP__returnValidOnlineCSVURL(url){
 
 
 /**
- * _HTTP__returnInvalidOnlineCSVURL
+ * _handleCSVAsURL__returnInvalidOnlineCSVURL
  * @param url
  * @returns {Function}
  * @private
  */
-function _HTTP__returnInvalidOnlineCSVURL(url){
+function _handleCSVAsURL__returnInvalidOnlineCSVURL(url){
     return function(done){
         CSVtoJSON
             .convert(url)
@@ -213,6 +224,42 @@ function _HTTP__returnInvalidOnlineCSVURL(url){
 
             }, function(err){
                 expect(err).to.be.defined;
+                done();
+            });
+    }
+}
+
+/**
+ * Output CSV String into JSON
+ * @param string
+ * @returns {Function}
+ * @private
+ */
+function _handleCSVAsString__returnValidStringToJSON(string){
+    return function(done){
+        CSVtoJSON
+            .convert(string)
+            .then(function(data){
+                expect(data).to.be.defined;
+                expect(data.length).to.be.greaterThan(0);
+                done();
+            });
+    }
+}
+
+
+/**
+ * Handle CSV Error - bad conversion type
+ * @param string
+ * @returns {Function}
+ * @private
+ */
+function _handleCSVError__badType(string){
+    return function(done){
+        CSVtoJSON
+            .convert(string)
+            .then(function(data){},function(bad){
+                expect(bad).to.equal('Invalid Conversion Type');
                 done();
             });
     }

@@ -5,7 +5,9 @@
 "use strict";
 
 var Promise     = require('bluebird');
+
 var fs          = require('fs');
+
 var CSVtoJSON   = {};
 
 /////////////////////////
@@ -17,10 +19,19 @@ var CSVtoJSON   = {};
  * Public Headers, Variables, and Functions
  */
 
-    module.exports = CSVtoJSON;
+    module.exports          = CSVtoJSON;
 
-    /** Convert from CSV to JSON */
-    CSVtoJSON.convert = _convert;
+    /** Automatically detects file, string, or URL and converts to JSON format */
+    CSVtoJSON.convert       = _convert;
+
+    /** Convert file from CSV to JSON */
+    CSVtoJSON.convertFile   = _convertFile;
+
+    /** Convert file from CSV to JSON */
+    CSVtoJSON.convertString = _convertString;
+
+    /** Convert file from CSV to JSON */
+    CSVtoJSON.convertURL    = _convertURL;
 
 
 
@@ -32,6 +43,61 @@ var CSVtoJSON   = {};
  * Implementation, Private Functions
  */
 
+    /**
+     * Convert String
+     */
+    function _convertString(stringData){
+        return new Promise(function(resolve, reject){
+            _readFileData(resolve, reject)(null, stringData);
+        });
+    }
+
+    /**
+     * Convert URL
+     * @private
+     */
+
+    function _convertURL(csvFileName){
+        return new Promise(function(resolve, reject){
+            /** HTTP or HTTPS */
+            var http    = /http:\/\//.test(csvFileName) ? require('http') : require('https');
+            csvFileName = csvFileName.replace(/^https?:\/\//,'');
+            var query   = csvFileName.split('/');
+            var host    = query.shift();
+            var path    = query.join('/');
+
+            http.get({
+                    host: host,
+                    path: '/' + path
+                }, function (res) {
+                    var chunk = '';
+
+                    res.on('data', function (_chunk) { chunk += _chunk });
+                    res.on('end',  function () {
+                        _readFileData(resolve,reject)(null, chunk);
+                    });
+                })
+                .on('error', function(err){
+                    reject(err);
+                })
+        });
+    }
+
+    /**
+     * Convert File
+     * @private
+     */
+    function _convertFile(csvFileName){
+        return new Promise(function(resolve, reject){
+            fs.exists(csvFileName, function (exists) {
+                if(!exists){
+                    reject('File does not exist');
+                } else{
+                    fs.readFile(csvFileName, _readFileData(resolve, reject));
+                }
+            });
+        })
+    }
 
     /**
      * Convert
@@ -40,41 +106,28 @@ var CSVtoJSON   = {};
      * @private
      */
     function _convert(csvFileName){
-        //csvFileName = './src/valid-data.csv';
         return new Promise(function(resolve, reject){
             /** HTTP(S) or local data */
+            var fn;
                 if(_isHTTPFile(csvFileName)) {
-                    /** HTTP or HTTPS */
-                    var http    = /http:\/\//.test(csvFileName) ? require('http') : require('https');
-                    csvFileName = csvFileName.replace(/^https?:\/\//,'');
-                    var query   = csvFileName.split('/');
-                    var host    = query.shift();
-                    var path    = query.join('/');
-
-                    http.get({
-                            host: host,
-                            path: '/' + path
-                        }, function (res) {
-                            var chunk = '';
-
-                            res.on('data', function (_chunk) { chunk += _chunk });
-                            res.on('end',  function () {
-                                _readFileData(resolve,reject)(null, chunk);
-                            });
-                        })
-                        .on('error', function(err){
-                            reject(err);
-                        })
+                    /** HTTP/HTTPS URL */
+                    fn = 'convertURL';
+                } else if(/,/.test(csvFileName)){
+                    /** String **/
+                    fn = 'convertString';
+                } else if(/.csv\s*$/.test(csvFileName)){
+                    /** File Dir **/
+                    fn = 'convertFile';
+                } else{
+                    reject('Invalid Conversion Type');
                 }
-                else {
-                    fs.exists(csvFileName, function (exists) {
-                        if(!exists){
-                            reject('File does not exist');
-                        } else{
-                            fs.readFile(csvFileName, _readFileData(resolve, reject));
-                        }
+
+                CSVtoJSON[fn](csvFileName)
+                    .then(function(success){
+                        resolve(success);
+                    }, function(err){
+                        reject(err);
                     });
-                }
         });
     }
 
@@ -151,11 +204,11 @@ var CSVtoJSON   = {};
                     _output.push(match);
                 } else{
                     /** Add to cache so it can be concatenated **/
-                    _keepstr = match + ',';
+                    _keepstr = match.substring(1,match.length) + ',';
                 }
             } else if(endWithQuotes.test(match)){
                 /** Does not end with single double quotes so keep it for now **/
-                _keepstr += match;
+                _keepstr += match.substring(0,match.length-1);
                 _output.push(_keepstr);
                 _keepstr = '';
             } else if(_keepstr.length > 0){
