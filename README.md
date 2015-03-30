@@ -1,7 +1,5 @@
-# node-csvjsonlite
-Lightweight CSV to JSON for Node.JS
-
-
+# node-csvjsonlite [![Build Status](https://travis-ci.org/tak215/node-csvjsonlite.svg?branch=master)](https://travis-ci.org/tak215/node-csvjsonlite) [![npm version](https://badge.fury.io/js/node-csvjsonlite.svg)](http://badge.fury.io/js/node-csvjsonlite)
+###Lightweight CSV to JSON for Node.JS
 
 # Usage
 
