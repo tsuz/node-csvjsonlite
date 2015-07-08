@@ -194,6 +194,9 @@ var _optionsList= ['sort', 'filter', 'map'];
                 //console.log('element after',_element);
                 /** Handle any kind of comma within double quotes */
                 for (var key in firstRow) {
+                    if(!firstRow[key]) continue;
+                    firstRow[key] = firstRow[key].replace(/^"|"$/g, '');
+
                     var str = _element[key];
                     _obj[firstRow[key]] = typeof str === 'string' ? str.replace(/^"|"$/g, '') : str;
                 }
