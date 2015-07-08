@@ -10,6 +10,8 @@ var fs          = require('fs');
 
 var CSVtoJSON   = {};
 
+var _optionsList= ['sort', 'filter', 'map'];
+
 /////////////////////////
 /////////////////////////
 /////////////////////////
@@ -46,9 +48,9 @@ var CSVtoJSON   = {};
     /**
      * Convert String
      */
-    function _convertString(stringData){
+    function _convertString(stringData, options){
         return new Promise(function(resolve, reject){
-            _readFileData(resolve, reject)(null, stringData);
+            _readFileData(resolve, reject, options)(null, stringData);
         });
     }
 
@@ -57,7 +59,7 @@ var CSVtoJSON   = {};
      * @private
      */
 
-    function _convertURL(csvFileName){
+    function _convertURL(csvFileName, options){
         return new Promise(function(resolve, reject){
             /** HTTP or HTTPS */
             var http    = /http:\/\//.test(csvFileName) ? require('http') : require('https');
@@ -74,7 +76,7 @@ var CSVtoJSON   = {};
 
                     res.on('data', function (_chunk) { chunk += _chunk });
                     res.on('end',  function () {
-                        _readFileData(resolve,reject)(null, chunk);
+                        _readFileData(resolve, reject, options)(null, chunk);
                     });
                 })
                 .on('error', function(err){
@@ -87,13 +89,13 @@ var CSVtoJSON   = {};
      * Convert File
      * @private
      */
-    function _convertFile(csvFileName){
+    function _convertFile(csvFileName, options){
         return new Promise(function(resolve, reject){
             fs.exists(csvFileName, function (exists) {
                 if(!exists){
                     reject('File does not exist');
                 } else{
-                    fs.readFile(csvFileName, _readFileData(resolve, reject));
+                    fs.readFile(csvFileName, _readFileData(resolve, reject, options));
                 }
             });
         })
@@ -102,10 +104,11 @@ var CSVtoJSON   = {};
     /**
      * Convert
      * @param csvFileName
+     * @param options
      * @returns {bluebird}
      * @private
      */
-    function _convert(csvFileName){
+    function _convert(csvFileName, options){
         return new Promise(function(resolve, reject){
             /** HTTP(S) or local data */
             var fn;
@@ -126,11 +129,36 @@ var CSVtoJSON   = {};
 
                 CSVtoJSON[fn](csvFileName)
                     .then(function(success){
-                        resolve(success);
+                        resolve(_applyCustomOptions(success, options));
                     }, function(err){
                         reject(err);
                     });
         });
+    }
+
+    /**
+     * Apply options if there are any
+     * @param data
+     * @param options
+     * @returns {*}
+     * @private
+     */
+    function _applyOptions(data, options){
+        if(options) {
+            var key = options.sortBy;
+            var rev = options.reverse;
+            if (!key) return data;
+            if (rev) {
+                data.sort(function (b, a) {
+                    return a[key] - b[key];
+                });
+            } else {
+                data.sort(function (a, b) {
+                    return a[key] - b[key];
+                });
+            }
+        }
+        return data;
     }
 
     /**
@@ -146,7 +174,7 @@ var CSVtoJSON   = {};
     /**
      * Read Data from file
      */
-    function _readFileData(resolve, reject) {
+    function _readFileData(resolve, reject, options) {
         return function(err, data) {
             var output = [];
             var _data = data.toString();
@@ -163,14 +191,35 @@ var CSVtoJSON   = {};
                 if(!otherRows[key]) continue;
                 var _obj = {};
                 var _element = _readFileData__convertToArray(otherRows[key]);
+                //console.log('element after',_element);
                 /** Handle any kind of comma within double quotes */
                 for (var key in firstRow) {
-                    _obj[firstRow[key]] = _element[key];
+                    var str = _element[key];
+                    _obj[firstRow[key]] = typeof str === 'string' ? str.replace(/^"|"$/g, '') : str;
                 }
                 output.push(_obj)
             }
+            /** Apply options if there are any */
+            if(options){
+                output = _applyOptions(output, options);
+            }
             resolve(output);
         }
+    }
+
+    /**
+     * Apply custom options such as sort, filter, map
+     */
+    function _applyCustomOptions(data, options){
+        for(var key in _optionsList){
+            for(var opt in options){
+                if(_optionsList[key] == opt){
+                    /** If options are available */
+                    data[opt](options[opt]);
+                }
+            }
+        }
+        return data;
     }
 
     /**
@@ -201,6 +250,7 @@ var CSVtoJSON   = {};
         var _output     = [];
         str.replace(commaRegExp, function(match){
             if(startWithQuotes.test(match)){
+                //console.log('start with quotes');
                 if(endWithQuotes.test(match)){
                     /** Starts with double quotes and ends with double quotes **/
                     _output.push(match);
@@ -209,16 +259,19 @@ var CSVtoJSON   = {};
                     _keepstr = match.substring(1,match.length) + ',';
                 }
             } else if(endWithQuotes.test(match)){
+                //console.log('end with quotes');
                 /** Does not end with single double quotes so keep it for now **/
                 _keepstr += match.substring(0,match.length-1);
                 _output.push(_keepstr);
                 _keepstr = '';
             } else if(_keepstr.length > 0){
+                //console.log('length > 0');
                 /** Add to _keepstr and move on */
                 _keepstr += match + ',';
             } else{
+                //console.log('length 0 with quotes');
                 /** _keepstr is length 0 so just a normal string. add to stack */
-                _output.push(match + ',');
+                _output.push(match);
             }
         })
         return _output;

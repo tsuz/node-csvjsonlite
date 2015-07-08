@@ -16,6 +16,7 @@ describe('CSV to JSON', function(){
     var corruptDataFile = './test/data/corrupt-data.csv'; // TODO
     var columnOnlyFile  = './test/data/column-only-data.csv';
     var validCommaFile  = './test/data/valid-data-comma.csv';
+    var largeDataFile   = './test/data/valid-data-stock.csv';
 
     describe('Detect and Handle CSV Data as File', function(){
         it('should convert into array with defined parameters',
@@ -35,6 +36,13 @@ describe('CSV to JSON', function(){
 
         it('should handle exception for commas within cell',
             _handleCSVAsFile__handleExceptionForCommas(validCommaFile, definedKeys));
+
+        it('should handle custom options',
+            _handleCSVAsFile__customOption_sort(validDataFile, definedKeys));
+
+        it('should handle more data',
+            _handleCSVAsFile__large_data(largeDataFile));
+
     })
 
     describe('Detect and Handle HTTP CSV Data', function(){
@@ -82,7 +90,9 @@ function _handleCSVAsFile__convertIntoArrayWithDefinedParameters(validDataFile, 
         CSVtoJSON
             .convert(validDataFile)
             .then(function (data) {
+                //console.log('data',data);
                 expect(data.length).to.equal(3);
+                expect(data[0].Open).to.equal('2.58');
                 for (var key in definedKeys) {
                     data.forEach(function (e) {
                         expect(e[definedKeys[key]]).to.be.defined;
@@ -180,7 +190,7 @@ function _handleCSVAsFile__handleExceptionForCommas(validCommaFile, definedKeys)
             .then(function(data){
                 expect(data.length).to.equal(3);
                 expect(data[0]['Volume']).to.equal('1045,200');
-                expect(data[1]['Close']).to.equal('"2.59"');
+                expect(data[1]['Close']).to.equal('2.59');
                 for(var key in definedKeys){
                     data.forEach(function(e){
                         expect(e[definedKeys[key]]).to.be.defined;
@@ -191,6 +201,61 @@ function _handleCSVAsFile__handleExceptionForCommas(validCommaFile, definedKeys)
     }
 }
 
+/**
+ * This should test whether the convert can sort things
+ * @param validFile
+ * @private
+ */
+function _handleCSVAsFile__customOption_sort(validFile, definedKeys){
+    return function(done){
+
+        /** Set sort options */
+        var options = {};
+        options.sort = function(a,b){
+            return a.Open - b.Open;
+        };
+
+        CSVtoJSON
+            .convert(validFile, options)
+            .then(function(data){
+                expect(data.length).to.equal(3);
+               // console.log('data',data);
+                expect(data[0]['Open']).to.equal("2.58");
+                expect(data[1]['Open']).to.equal("2.64");
+                expect(data[2]['Open']).to.equal("2.73");
+
+                for(var key in definedKeys){
+                    data.forEach(function(e){
+                        expect(e[definedKeys[key]]).to.be.defined;
+                    })
+                }
+
+                /**
+                 * Change options
+                 */
+                options.sort = function(b,a){
+                    return a.Low - b.Low;
+                };
+
+                CSVtoJSON
+                    .convert(validFile, options)
+                    .then(function(data){
+                        expect(data.length).to.equal(3);
+                       // console.log('data',data);
+                        expect(data[0]['Low']).to.equal("2.61");
+                        expect(data[1]['Low']).to.equal("2.57");
+                        expect(data[2]['Low']).to.equal("2.53");
+
+                        for(var key in definedKeys){
+                            data.forEach(function(e){
+                                expect(e[definedKeys[key]]).to.be.defined;
+                            })
+                        }
+                        done();
+                    })
+            })
+    }
+}
 
 /**
  * _handleCSVAsURL__returnValidOnlineCSVURL
@@ -262,5 +327,16 @@ function _handleCSVError__badType(string){
                 expect(bad).to.equal('Invalid Conversion Type');
                 done();
             });
+    }
+}
+
+function _handleCSVAsFile__large_data(csvstring){
+    return function(done){
+        CSVtoJSON
+            .convert(csvstring)
+            .then(function(data){
+                //console.log('data',data);
+                done();
+            })
     }
 }
