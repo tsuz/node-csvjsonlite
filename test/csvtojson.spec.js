@@ -40,6 +40,8 @@ describe('CSV to JSON', function(){
         it('should handle custom options',
             _handleCSVAsFile__customOption_sort(validDataFile, definedKeys));
 
+
+        this.timeout(4000);
         it('should handle more data',
             _handleCSVAsFile__large_data(largeDataFile));
 
@@ -57,6 +59,8 @@ describe('CSV to JSON', function(){
         it('should retrieve data from another valid HTTP URL',
             _handleCSVAsURL__returnValidOnlineCSVURL(validUrl2));
 
+
+        this.timeout(4000);
         it('should retrieve data from valid HTTPS URL',
             _handleCSVAsURL__returnValidOnlineCSVURL(validHTTPS));
 
